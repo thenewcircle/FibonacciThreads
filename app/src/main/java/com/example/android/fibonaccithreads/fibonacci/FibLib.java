@@ -1,5 +1,6 @@
 package com.example.android.fibonaccithreads.fibonacci;
 
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
@@ -118,5 +119,32 @@ public class FibLib {
         Runnable work = new ComputeWork(n, mHandler);
         //Start a new thread to handle our background work
         new Thread(work).start();
+    }
+
+    private class ComputeTask extends AsyncTask<Long, Void, FibonacciResponse> {
+
+        @Override
+        protected FibonacciResponse doInBackground(Long... params) {
+            final long n = params[0];
+
+            //Execute computation in the background thread
+            //Let AsyncTask hand the result back to the main thread
+            return calculate(n);
+        }
+
+        @Override
+        protected void onPostExecute(FibonacciResponse response) {
+            //Deliver response to an attached callback
+            deliverCallbackResult(response);
+        }
+    }
+
+    /**
+     * Calculate the Fibonacci number using AsyncTask
+     *
+     * @param n Sequence index of Fibonacci number
+     */
+    public void calculateAsyncTask(long n) {
+        new ComputeTask().execute(n);
     }
 }

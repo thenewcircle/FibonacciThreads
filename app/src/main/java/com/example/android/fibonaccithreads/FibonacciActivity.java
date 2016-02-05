@@ -79,6 +79,9 @@ public class FibonacciActivity extends AppCompatActivity implements
                 case R.id.option_thread:
                     mFibLib.calculateInThread(n);
                     break;
+                case R.id.option_task:
+                    mFibLib.calculateAsyncTask(n);
+                    break;
                 default:
                     //Do nothing
                     stopProgress();
