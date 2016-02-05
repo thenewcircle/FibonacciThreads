@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Fibonacci Threads</string>
+    <string name="hello">Get Your Fibonacci Here!</string>
+    <string name="input_hint">Enter N</string>
+    <string name="input_error">Use a number next time!</string>
+    <string name="button_text">Get Fibonacci Result</string>
+    <string name="output_result">Result: %1$d\n(in %2$.3fs)</string>
+</resources>
