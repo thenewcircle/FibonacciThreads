@@ -1,0 +1,5 @@
+= Fibonacci Threads
+
+This project was created to support various http://thenewcircle.com/training/android/[NewCircle Android Training] courses.
+
+This application describes the basic use and necessity of Android background threads.
