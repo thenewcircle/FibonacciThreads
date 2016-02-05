@@ -42,6 +42,29 @@ public class FibonacciActivity extends AppCompatActivity implements
         mFibLib = FibLib.getInstance();
     }
 
+    /* Asynchronous cases with thread and task */
+    private FibLib.OnFibResultListener mFibResultListener = new FibLib.OnFibResultListener() {
+        @Override
+        public void onFibResult(FibonacciResponse response) {
+            //Update the UI
+            updateResultsUI(response);
+        }
+    };
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        //Attach callback
+        mFibLib.setOnFibResultListener(mFibResultListener);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        //Detach callback to avoid leaks
+        mFibLib.setOnFibResultListener(null);
+    }
+
     /* Handler for Button click events */
     @Override
     public void onClick(View v) {
@@ -52,9 +75,15 @@ public class FibonacciActivity extends AppCompatActivity implements
             //Show progress UI
             startProgress();
             //Calculate result
-            FibonacciResponse response = mFibLib.calculate(n);
-            //Display result in UI
-            updateResultsUI(response);
+            switch (mSelector.getCheckedRadioButtonId()) {
+                case R.id.option_thread:
+                    mFibLib.calculateInThread(n);
+                    break;
+                default:
+                    //Do nothing
+                    stopProgress();
+                    break;
+            }
 
         } catch (NumberFormatException e) {
             //Show an error message
