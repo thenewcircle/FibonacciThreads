@@ -1,6 +1,8 @@
 package com.example.android.fibonaccithreads;
 
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
@@ -9,21 +11,22 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.fibonaccithreads.fibonacci.FibLib;
+import com.example.android.fibonaccithreads.fibonacci.FibonacciLoader;
 import com.example.android.fibonaccithreads.fibonacci.FibonacciResponse;
 
 public class FibonacciActivity extends AppCompatActivity implements
-        View.OnClickListener {
+        View.OnClickListener,
+        LoaderManager.LoaderCallbacks<FibonacciResponse> {
     private static final String TAG = FibonacciActivity.class.getSimpleName();
+
+    /* Unique ID for our loader */
+    private static final int LOADER_ID = 0;
 
     /* Handles to UI elements */
     private EditText mInputText;
     private TextView mOutputText;
     private RadioGroup mSelector;
     private ProgressBar mProgress;
-
-    /* Computation class for Fibonacci numbers */
-    private FibLib mFibLib;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,30 +42,14 @@ public class FibonacciActivity extends AppCompatActivity implements
         //Wire UI actions
         findViewById(R.id.button).setOnClickListener(this);
 
-        mFibLib = FibLib.getInstance();
-    }
-
-    /* Asynchronous cases with thread and task */
-    private FibLib.OnFibResultListener mFibResultListener = new FibLib.OnFibResultListener() {
-        @Override
-        public void onFibResult(FibonacciResponse response) {
-            //Update the UI
-            updateResultsUI(response);
+        //Check for an existing load in progress
+        Loader<FibonacciResponse> fibLoader =
+                getSupportLoaderManager().getLoader(LOADER_ID);
+        if (fibLoader != null && fibLoader.isStarted()) {
+            //Reconnect with the existing load in progress
+            startProgress();
+            getSupportLoaderManager().initLoader(LOADER_ID, null, this);
         }
-    };
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        //Attach callback
-        mFibLib.setOnFibResultListener(mFibResultListener);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        //Detach callback to avoid leaks
-        mFibLib.setOnFibResultListener(null);
     }
 
     /* Handler for Button click events */
@@ -74,19 +61,10 @@ public class FibonacciActivity extends AppCompatActivity implements
 
             //Show progress UI
             startProgress();
-            //Calculate result
-            switch (mSelector.getCheckedRadioButtonId()) {
-                case R.id.option_thread:
-                    mFibLib.calculateInThread(n);
-                    break;
-                case R.id.option_task:
-                    mFibLib.calculateAsyncTask(n);
-                    break;
-                default:
-                    //Do nothing
-                    stopProgress();
-                    break;
-            }
+            //Start the loader with new arguments to calculate result
+            Bundle args = new Bundle();
+            args.putLong("fibNumber", n);
+            getSupportLoaderManager().restartLoader(LOADER_ID, args, this);
 
         } catch (NumberFormatException e) {
             //Show an error message
@@ -117,5 +95,23 @@ public class FibonacciActivity extends AppCompatActivity implements
 
         //Hide progress
         stopProgress();
+    }
+
+    /* Loader callbacks for Fibonacci computation */
+
+    @Override
+    public Loader<FibonacciResponse> onCreateLoader(int id, Bundle args) {
+        return new FibonacciLoader(this, args.getLong("fibNumber"));
+    }
+
+    @Override
+    public void onLoadFinished(Loader<FibonacciResponse> loader, FibonacciResponse data) {
+        //Display result in UI
+        updateResultsUI(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<FibonacciResponse> loader) {
+        mOutputText.setText(null);
     }
 }
