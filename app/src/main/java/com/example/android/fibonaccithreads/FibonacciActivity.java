@@ -45,20 +45,21 @@ public class FibonacciActivity extends AppCompatActivity implements
     @Override
     public void onClick(View v) {
         try {
-            //Show progress UI
-            startProgress();
-
             //Obtain input value from UI
             long n = Long.parseLong(mInputText.getText().toString());
+
+            //Show progress UI
+            startProgress();
             //Calculate result
             FibonacciResponse response = mFibLib.calculate(n);
-
             //Display result in UI
             setResultText(response);
+
         } catch (NumberFormatException e) {
             //Show an error message
             Toast.makeText(this, R.string.input_error, Toast.LENGTH_SHORT)
                     .show();
+            stopProgress();
         }
     }
 
@@ -69,6 +70,12 @@ public class FibonacciActivity extends AppCompatActivity implements
         mOutputText.setText(null);
     }
 
+    /* Hide progress spinner */
+    private void stopProgress() {
+        //Hide progress
+        mProgress.setVisibility(View.INVISIBLE);
+    }
+
     /* Hide progress spinner and set result text */
     private void setResultText(FibonacciResponse response) {
         //Display result in UI
@@ -77,6 +84,6 @@ public class FibonacciActivity extends AppCompatActivity implements
         mOutputText.setText(result);
 
         //Hide progress
-        mProgress.setVisibility(View.INVISIBLE);
+        stopProgress();
     }
 }
