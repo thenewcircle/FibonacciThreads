@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,6 +18,7 @@ public class FibonacciActivity extends AppCompatActivity implements
     /* Handles to UI elements */
     private EditText mInputText;
     private TextView mOutputText;
+    private RadioGroup mSelector;
     private ProgressBar mProgress;
 
     /* Computation class for Fibonacci numbers */
@@ -30,6 +32,7 @@ public class FibonacciActivity extends AppCompatActivity implements
         //Gather UI elements
         mInputText = (EditText) findViewById(R.id.input);
         mOutputText = (TextView) findViewById(R.id.output);
+        mSelector = (RadioGroup) findViewById(R.id.selector);
         mProgress = (ProgressBar) findViewById(R.id.progress);
 
         //Wire UI actions
