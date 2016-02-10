@@ -7,4 +7,5 @@
     <string name="output_result">Result: %1$d\n(in %2$.3fs)</string>
     <string name="option_thread">Thread</string>
     <string name="option_task">AsyncTask</string>
+    <string name="timing_result">%1$d Processor Core(s)\nTotal Time: %2$.3fs</string>
 </resources>

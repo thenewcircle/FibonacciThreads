@@ -23,4 +23,10 @@ public class FibonacciResponse {
         this.result = result;
         this.computeTime = computeTime;
     }
+
+    @Override
+    public String toString() {
+        return String.format("N: %d\tResult: %d\nTime: %.3f", this.n,
+                this.result, this.computeTime / 1000f);
+    }
 }

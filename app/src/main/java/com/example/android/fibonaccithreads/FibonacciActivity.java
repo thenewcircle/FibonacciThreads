@@ -53,13 +53,12 @@ public class FibonacciActivity extends AppCompatActivity implements
             //Calculate result
             FibonacciResponse response = mFibLib.calculate(n);
             //Display result in UI
-            setResultText(response);
+            updateResultsUI(response);
 
         } catch (NumberFormatException e) {
             //Show an error message
             Toast.makeText(this, R.string.input_error, Toast.LENGTH_SHORT)
                     .show();
-            stopProgress();
         }
     }
 
@@ -77,7 +76,7 @@ public class FibonacciActivity extends AppCompatActivity implements
     }
 
     /* Hide progress spinner and set result text */
-    private void setResultText(FibonacciResponse response) {
+    private void updateResultsUI(FibonacciResponse response) {
         //Display result in UI
         String result = getString(R.string.output_result,
                 response.result, response.computeTime / 1000f);
