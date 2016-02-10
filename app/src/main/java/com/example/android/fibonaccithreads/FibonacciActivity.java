@@ -3,7 +3,9 @@ package com.example.android.fibonaccithreads;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -25,6 +27,8 @@ public class FibonacciActivity extends AppCompatActivity implements
     /* Computation class for Fibonacci numbers */
     private FibLib mFibLib;
 
+    private ArrayAdapter<FibonacciResponse> mAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +44,11 @@ public class FibonacciActivity extends AppCompatActivity implements
         findViewById(R.id.button).setOnClickListener(this);
 
         mFibLib = FibLib.getInstance();
+
+        mAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_list_item_1);
+        ListView list = (ListView) findViewById(R.id.list);
+        list.setAdapter(mAdapter);
     }
 
     /* Asynchronous cases with thread and task */
@@ -48,6 +57,15 @@ public class FibonacciActivity extends AppCompatActivity implements
         public void onFibResult(FibonacciResponse response) {
             //Update the UI
             updateResultsUI(response);
+        }
+
+        @Override
+        public void onActiveStatusChanged(boolean isActive) {
+            if (isActive) {
+                startProgress();
+            } else {
+                stopProgress();
+            }
         }
     };
 
@@ -72,19 +90,20 @@ public class FibonacciActivity extends AppCompatActivity implements
             //Obtain input value from UI
             long n = Long.parseLong(mInputText.getText().toString());
 
-            //Show progress UI
-            startProgress();
-            //Calculate result
+            //Queue up operations for all numbers below the input value
             switch (mSelector.getCheckedRadioButtonId()) {
                 case R.id.option_thread:
-                    mFibLib.calculateInThread(n);
+                    for (long i=n; i > 0; i--) {
+                        mFibLib.calculateInThread(i);
+                    }
                     break;
                 case R.id.option_task:
-                    mFibLib.calculateAsyncTask(n);
+                    for (long i=n; i > 0; i--) {
+                        mFibLib.calculateAsyncTask(i);
+                    }
                     break;
                 default:
                     //Do nothing
-                    stopProgress();
                     break;
             }
 
@@ -95,11 +114,18 @@ public class FibonacciActivity extends AppCompatActivity implements
         }
     }
 
+    /* Used to estimate overall time of each request */
+    private long mStartTime;
+    private long mEndTime;
+
     /* Show progress spinner and clear result text */
     private void startProgress() {
         //Show progress
         mProgress.setVisibility(View.VISIBLE);
+
+        mStartTime = mEndTime = System.currentTimeMillis();
         mOutputText.setText(null);
+        mAdapter.clear();
     }
 
     /* Hide progress spinner */
@@ -111,11 +137,10 @@ public class FibonacciActivity extends AppCompatActivity implements
     /* Hide progress spinner and set result text */
     private void updateResultsUI(FibonacciResponse response) {
         //Display result in UI
-        String result = getString(R.string.output_result,
-                response.result, response.computeTime / 1000f);
-        mOutputText.setText(result);
-
-        //Hide progress
-        stopProgress();
+        mEndTime = System.currentTimeMillis();
+        long delta = (mEndTime - mStartTime);
+        mOutputText.setText(getString(R.string.timing_result,
+                FibLib.PROCESSOR_CORES, delta / 1000f));
+        mAdapter.add(response);
     }
 }

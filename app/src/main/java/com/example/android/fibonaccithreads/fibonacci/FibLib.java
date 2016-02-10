@@ -6,11 +6,19 @@ import android.os.Looper;
 import android.os.Process;
 import android.util.Log;
 
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 /**
  * This class calculates Fibonacci sequence values and returns their results.
  */
 public class FibLib {
     private static final String TAG = FibLib.class.getSimpleName();
+
+    /* Constant providing number of cores on the system */
+    public static final int PROCESSOR_CORES =
+            Runtime.getRuntime().availableProcessors();
 
     /* Callback interface for Fibonacci results */
     public interface OnFibResultListener {
@@ -20,14 +28,32 @@ public class FibLib {
          * @param response Response containing results
          */
         void onFibResult(FibonacciResponse response);
+
+        /**
+         * Called when a change in background activity is detected.
+         *
+         * @param isActive true when work is currently in process, false
+         *                 when idle.
+         */
+        void onActiveStatusChanged(boolean isActive);
     }
 
     /* Local callback for asynchronous results */
     private OnFibResultListener mOnFibResultListener;
 
+    /* Local executor for handling incoming work */
+    private ThreadPoolExecutor mExecutor;
+
     /* FibLib is a singleton */
     private static final FibLib INSTANCE = new FibLib();
-    private FibLib() { }
+    private FibLib() {
+        //Construct a thread pool with a fixed size (2x available cores)
+        mExecutor = new ThreadPoolExecutor(
+                PROCESSOR_CORES * 2, PROCESSOR_CORES * 2, //min, max
+                1, TimeUnit.SECONDS,                      //timeout
+                new LinkedBlockingQueue<Runnable>()       //queue
+        );
+    }
     public static FibLib getInstance() {
         return INSTANCE;
     }
@@ -67,6 +93,15 @@ public class FibLib {
             mOnFibResultListener.onFibResult(response);
         } else {
             Log.w(TAG, "Unable to deliver Fibonacci callback. Listener detached.");
+        }
+    }
+
+    /* Wrapper to pass a status change to the attached callback */
+    private void deliverRunStatus(boolean isActive) {
+        if (mOnFibResultListener != null) {
+            mOnFibResultListener.onActiveStatusChanged(isActive);
+        } else {
+            Log.w(TAG, "Unable to deliver status callback. Listener detached.");
         }
     }
 
@@ -116,11 +151,15 @@ public class FibLib {
      * @param n Sequence index of Fibonacci number
      */
     public void calculateInThread(long n) {
+        //Start a progress tracker
+        trackProgress();
+
         Runnable work = new ComputeWork(n, mHandler);
         //Start a new thread to handle our background work
-        new Thread(work).start();
+        mExecutor.execute(work);
     }
 
+    /* AsyncTask to perform block work in the background */
     private class ComputeTask extends AsyncTask<Long, Void, FibonacciResponse> {
 
         @Override
@@ -145,6 +184,49 @@ public class FibLib {
      * @param n Sequence index of Fibonacci number
      */
     public void calculateAsyncTask(long n) {
-        new ComputeTask().execute(n);
+        //Start a progress tracker
+        trackProgress();
+
+        new ComputeTask().executeOnExecutor(mExecutor, n);
+    }
+
+    /**
+     * Return the number of remaining tasks, which includes tasks in the
+     * queue and actively in process.
+     */
+    public int getRemainingTasks() {
+        return mExecutor.getQueue().size() + mExecutor.getActiveCount();
+    }
+
+    /**
+     * Return an estimation of whether the Executor is currently processing
+     * any incoming work.
+     */
+    public boolean isActive() {
+        return getRemainingTasks() > 0;
+    }
+
+    /* Start tracking the Executor state, if we aren't already */
+    private void trackProgress() {
+        if (!isActive()) {
+            deliverRunStatus(true);
+            mHandler.post(new ProgressWork());
+        }
+    }
+
+    /* Runnable to encapsulate polling of running status */
+    private class ProgressWork implements Runnable {
+
+        @Override
+        public void run() {
+            //Poll the active status of the Executor
+            if (isActive()) {
+                //Check again later
+                mHandler.postDelayed(this, 500);
+            } else {
+                //Notify the listener of the change
+                deliverRunStatus(false);
+            }
+        }
     }
 }
