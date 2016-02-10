@@ -6,6 +6,8 @@ import android.os.Looper;
 import android.os.Process;
 import android.util.Log;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +45,9 @@ public class FibLib {
 
     /* Local executor for handling incoming work */
     private ThreadPoolExecutor mExecutor;
+
+    /* Local handler for processing file log requests */
+    private FileLoggingHandler mLoggingHandler;
 
     /* FibLib is a singleton */
     private static final FibLib INSTANCE = new FibLib();
@@ -118,6 +123,8 @@ public class FibLib {
 
         @Override
         public void run() {
+            //Log the result to a file
+            logEvent(TAG, mResponse.toString());
             //Deliver the callback on the main thread
             deliverCallbackResult(mResponse);
         }
@@ -227,6 +234,33 @@ public class FibLib {
                 //Notify the listener of the change
                 deliverRunStatus(false);
             }
+        }
+    }
+
+    /**
+     * Create a new log handler to route logging events to the provided
+     * file destination.
+     *
+     * @param logFile Destination file for logged events.
+     *
+     * @throws IOException if unable to open the requested file.
+     */
+    public void setLogFile(File logFile) throws IOException {
+        if (mLoggingHandler != null) {
+            //Shut down the current handler
+            mLoggingHandler.shutdown();
+            mLoggingHandler = null;
+        }
+
+        if (logFile != null) {
+            mLoggingHandler = new FileLoggingHandler(logFile);
+        }
+    }
+
+    /* Pass log message requests down to the handler */
+    private void logEvent(String tag, String message) {
+        if (mLoggingHandler != null) {
+            mLoggingHandler.logMessage(tag, message);
         }
     }
 }

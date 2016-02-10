@@ -2,6 +2,7 @@ package com.example.android.fibonaccithreads;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -13,6 +14,9 @@ import android.widget.Toast;
 
 import com.example.android.fibonaccithreads.fibonacci.FibLib;
 import com.example.android.fibonaccithreads.fibonacci.FibonacciResponse;
+
+import java.io.File;
+import java.io.IOException;
 
 public class FibonacciActivity extends AppCompatActivity implements
         View.OnClickListener {
@@ -74,6 +78,14 @@ public class FibonacciActivity extends AppCompatActivity implements
         super.onStart();
         //Attach callback
         mFibLib.setOnFibResultListener(mFibResultListener);
+        try {
+            //Create a log file on external storage
+            File logFile = new File(getExternalCacheDir(), "fibonacci.log");
+            //Attach it to the library
+            mFibLib.setLogFile(logFile);
+        } catch (IOException e) {
+            Log.w(TAG, e);
+        }
     }
 
     @Override
@@ -81,6 +93,12 @@ public class FibonacciActivity extends AppCompatActivity implements
         super.onStop();
         //Detach callback to avoid leaks
         mFibLib.setOnFibResultListener(null);
+        try {
+            //Clear the file logger
+            mFibLib.setLogFile(null);
+        } catch (IOException e) {
+            Log.w(TAG, e);
+        }
     }
 
     /* Handler for Button click events */
