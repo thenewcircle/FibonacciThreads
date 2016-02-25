@@ -14,6 +14,7 @@ import com.example.android.fibonaccithreads.fibonacci.FibonacciResponse;
 
 public class FibonacciActivity extends AppCompatActivity implements
         View.OnClickListener {
+    private static final String TAG = FibonacciActivity.class.getSimpleName();
 
     /* Handles to UI elements */
     private EditText mInputText;
